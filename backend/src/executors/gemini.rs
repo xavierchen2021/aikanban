@@ -18,6 +18,7 @@ use streaming::GeminiStreaming;
 use uuid::Uuid;
 
 use crate::{
+    agent_config::AgentsConfig,
     command_runner::{CommandProcess, CommandRunner},
     executor::{
         Executor, ExecutorError, NormalizedConversation, NormalizedEntry, NormalizedEntryType,
@@ -233,18 +234,46 @@ Task title: {}"#,
 }
 
 impl GeminiExecutor {
-    /// Create a standardized Gemini CLI command
+    /// Create a standardized Gemini CLI command from config
     fn create_gemini_command(worktree_path: &str) -> CommandRunner {
+        let config = AgentsConfig::load_default().unwrap_or_else(|_| {
+            // Fallback to hardcoded defaults if config loading fails
+            let mut agents = std::collections::HashMap::new();
+            agents.insert("gemini".to_string(), crate::agent_config::AgentConfig {
+                name: "Gemini CLI".to_string(),
+                command: "npx".to_string(),
+                args: vec!["-y", "@google/genai-cli"].into_iter().map(String::from).collect(),
+                plan_mode: None,
+                streaming: Some(true),
+            });
+            crate::agent_config::AgentsConfig { agents, global: None }
+        });
+
         let (shell_cmd, shell_arg) = get_shell_command();
-        let gemini_command = "npx @google/gemini-cli@latest --yolo";
+        
+        let gemini_command = if let Some(agent_config) = config.get_agent("gemini") {
+            let mut cmd_parts = vec![agent_config.command.clone()];
+            cmd_parts.extend(agent_config.args.clone());
+            cmd_parts.join(" ")
+        } else {
+            "npx -y @google/genai-cli".to_string()
+        };
 
         let mut command = CommandRunner::new();
         command
             .command(shell_cmd)
             .arg(shell_arg)
-            .arg(gemini_command)
+            .arg(&gemini_command)
             .working_dir(worktree_path)
             .env("NODE_NO_WARNINGS", "1");
+
+        // Apply global config
+        if let Some(global_config) = config.global {
+            if global_config.node_no_warnings.unwrap_or(false) {
+                command.env("NODE_NO_WARNINGS", "1");
+            }
+        }
+
         command
     }
 

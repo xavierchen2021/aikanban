@@ -16,6 +16,7 @@ use tower_http::cors::CorsLayer;
 use tracing_subscriber::{filter::LevelFilter, prelude::*};
 use vibe_kanban::{sentry_layer, Assets, ScriptAssets, SoundAssets};
 
+mod agent_config;
 mod app_state;
 mod command_runner;
 mod execution_monitor;

@@ -4,6 +4,7 @@ use async_trait::async_trait;
 use uuid::Uuid;
 
 use crate::{
+    agent_config::AgentsConfig,
     command_runner::{CommandProcess, CommandRunner},
     executor::{
         ActionType, Executor, ExecutorError, NormalizedConversation, NormalizedEntry,
@@ -50,19 +51,61 @@ impl Default for ClaudeExecutor {
 }
 
 impl ClaudeExecutor {
-    /// Create a new ClaudeExecutor with default settings
+    /// Create a new ClaudeExecutor with settings from config
     pub fn new() -> Self {
+        let config = AgentsConfig::load_default().unwrap_or_else(|_| {
+            // Fallback to hardcoded defaults if config loading fails
+            let mut agents = std::collections::HashMap::new();
+            agents.insert("claude".to_string(), crate::agent_config::AgentConfig {
+                name: "Claude Code".to_string(),
+                command: "npx -y @anthropic-ai/claude-code@latest".to_string(),
+                args: vec!["-p", "--dangerously-skip-permissions", "--verbose", "--output-format=stream-json"].into_iter().map(String::from).collect(),
+                plan_mode: None,
+                streaming: None,
+            });
+            crate::agent_config::AgentsConfig { agents, global: None }
+        });
+        
+        let (command, executor_type) = if let Some(agent_config) = config.get_agent("claude") {
+            let mut cmd_parts = vec![agent_config.command.clone()];
+            cmd_parts.extend(agent_config.args.clone());
+            (cmd_parts.join(" "), agent_config.name.clone())
+        } else {
+            ("npx -y @anthropic-ai/claude-code@latest -p --dangerously-skip-permissions --verbose --output-format=stream-json".to_string(), "Claude Code".to_string())
+        };
+        
         Self {
-            executor_type: "Claude Code".to_string(),
-            command: "npx -y @anthropic-ai/claude-code@latest -p --dangerously-skip-permissions --verbose --output-format=stream-json".to_string(),
+            executor_type,
+            command,
         }
     }
 
     pub fn new_plan_mode() -> Self {
-        let command = "npx -y @anthropic-ai/claude-code@latest -p --permission-mode=plan --verbose --output-format=stream-json";
-        let script = create_watchkill_script(command);
+        let config = AgentsConfig::load_default().unwrap_or_else(|_| {
+            // Fallback to hardcoded defaults if config loading fails
+            let mut agents = std::collections::HashMap::new();
+            agents.insert("claude-plan".to_string(), crate::agent_config::AgentConfig {
+                name: "Claude Plan".to_string(),
+                command: "npx -y @anthropic-ai/claude-code@latest".to_string(),
+                args: vec!["-p", "--permission-mode=plan", "--verbose", "--output-format=stream-json"].into_iter().map(String::from).collect(),
+                plan_mode: None,
+                streaming: None,
+            });
+            crate::agent_config::AgentsConfig { agents, global: None }
+        });
+
+        let (command, executor_type) = if let Some(agent_config) = config.get_agent("claude-plan") {
+            let mut cmd_parts = vec![agent_config.command.clone()];
+            cmd_parts.extend(agent_config.args.clone());
+            (cmd_parts.join(" "), agent_config.name.clone())
+        } else {
+            let command = "npx -y @anthropic-ai/claude-code@latest -p --permission-mode=plan --verbose --output-format=stream-json";
+            (command.to_string(), "ClaudePlan".to_string())
+        };
+
+        let script = create_watchkill_script(&command);
         Self {
-            executor_type: "ClaudePlan".to_string(),
+            executor_type,
             command: script,
         }
     }

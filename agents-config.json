@@ -1,0 +1,81 @@
+{
+  "agents": {
+    "claude": {
+      "name": "Claude Code",
+      "command": "ccr code",
+      "args": [
+        "-p",
+        "--dangerously-skip-permissions",
+        "--verbose",
+        "--output-format=stream-json"
+      ],
+      "plan_mode": null,
+      "streaming": false
+    },
+    "claude-plan": {
+      "name": "Claude Code (Plan Mode)",
+      "command": "ccr code",
+      "args": [
+        "-p",
+        "--permission-mode=plan",
+        "--verbose",
+        "--output-format=stream-json"
+      ],
+      "plan_mode": null,
+      "streaming": false
+    },
+    "gemini": {
+      "name": "Gemini CLI",
+      "command": "npx",
+      "args": ["-y", "@google/genai-cli"],
+      "plan_mode": null,
+      "streaming": true
+    },
+    "amp": {
+      "name": "Amp",
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/amp"],
+      "plan_mode": null,
+      "streaming": false
+    },
+    "aider": {
+      "name": "Aider",
+      "command": "python",
+      "args": ["-m", "aider.main", "--yes-always", "--no-auto-commits"],
+      "plan_mode": null,
+      "streaming": false
+    },
+    "codex": {
+      "name": "OpenAI Codex",
+      "command": "npx",
+      "args": ["-y", "@openai/codex"],
+      "plan_mode": null,
+      "streaming": false
+    },
+    "ccr": {
+      "name": "Claude Code Review",
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/claude-code@latest", "--review"],
+      "plan_mode": null,
+      "streaming": false
+    },
+    "sst-opencode": {
+      "name": "SST OpenCode",
+      "command": "npx",
+      "args": ["-y", "sst-opencode"],
+      "plan_mode": null,
+      "streaming": false
+    },
+    "charm-opencode": {
+      "name": "Charm OpenCode",
+      "command": "npx",
+      "args": ["-y", "charm-opencode"],
+      "plan_mode": null,
+      "streaming": false
+    }
+  },
+  "global": {
+    "node_no_warnings": true,
+    "shell_command": "auto"
+  }
+}

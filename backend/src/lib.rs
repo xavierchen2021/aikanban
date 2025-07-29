@@ -2,6 +2,7 @@ use rust_embed::RustEmbed;
 use sentry_tracing::{EventFilter, SentryLayer};
 use tracing::Level;
 
+pub mod agent_config;
 pub mod app_state;
 pub mod command_runner;
 pub mod execution_monitor;
